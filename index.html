@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Webcam Draw</title>
+  <script src="./build/tracking-min.js"></script>
+
+  <style>
+
+    .container{
+      position: relative;
+      margin: 0 auto;
+      width: 820px;
+      height: 600px;
+      box-shadow: -1px -1px 10px gray;
+    }
+
+    video,canvas{
+      position: absolute;
+      top: 10px;
+      left: 10px;
+
+      transform: rotateY(180deg);
+      -webkit-transform:rotateY(180deg); /* Safari and Chrome */
+      -moz-transform:rotateY(180deg); /* Firefox */
+    }
+
+    video{
+      opacity: 0.5;
+    }
+
+    #canvas{
+      z-index: 100;
+      background: transparent;
+    }
+
+    #canvas_helper{
+      z-index: 101;
+      background: transparent;
+      opacity: 0.5;
+    }
+  
+  </style>
+
+</head>
+<body>
+
+  <h1 style="position:absolute; left: 10px; top: 10px; width: 200px;">
+    Show some bright yellow object at webcam to control the cursor
+    <br>
+    <span style="color: yellow">
+        (tip: load a yellow wallpaper on your phone)
+    </span>
+  </h1>
+  <div class="container">
+    <video id="myVideo" width="800" height="580" preload autoplay loop muted></video>
+    <canvas id="canvas" width="800" height="580"></canvas>
+    <canvas id="canvas_helper" width="800" height="580"></canvas>
+  </div>
+
+  <h1 style="position:absolute; right: 10px; top: 10px; width: 200px;">
+    Press and hold LEFT SHIFT to draw    
+  </h1>
+
+
+  <script>
+
+  var colors = new tracking.ColorTracker(['yellow']);
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+  var ctxHelper = document.getElementById('canvas_helper').getContext('2d');
+  var ix, iy, fx, fy;
+  const SHIFT = 16;
+  var drawMode = false;
+
+  colors.on('track', function(event) {
+
+    // no data is found
+    if (event.data.length === 0) return;
+
+    // color match found
+    console.log(event.data.length);
+    var point = event.data[0];
+
+    // draw on canvas
+    if(drawMode){
+      fx = point.x;
+      fy = point.y;
+      ctx.beginPath();
+      ctx.moveTo(ix, iy);
+      ctx.lineTo(fx, fy);
+      ctx.stroke();
+      ix = fx;
+      iy = fy;
+    }else{
+      ix = point.x;
+      iy = point.y;
+    }
+
+    // draw cursor
+    ctxHelper.clearRect(0, 0, canvas.width, canvas.height);
+    ctxHelper.fillStyle = "red";
+    ctxHelper.beginPath();
+    ctxHelper.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+    ctxHelper.fill();
+
+  });
+
+
+  document.onkeydown = function(e){
+    if(e.keyCode === SHIFT) drawMode = true;
+  }
+
+  document.onkeyup = function(e){
+    if(e.keyCode === SHIFT) drawMode = false;
+  }
+
+  tracking.track('#myVideo', colors, { camera: true });
+
+  </script>
+</body>
+</html>
